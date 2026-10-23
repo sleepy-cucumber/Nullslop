@@ -482,7 +482,6 @@ class Choice2(pygame.sprite.Sprite):
                         offsety = HEIGHT//2 + 15
                         max_weight = level*40
                         generate_map()
-                        map_sprs.add(Tile(0,0,"spawn"))
                         if level % 3 == 0:
                             self.next = "intermissioncurse"
                         elif str(level)[len(str(level))-1] == 3 or str(level)[len(str(level))-1] == 5:
