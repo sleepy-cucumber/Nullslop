@@ -8,9 +8,53 @@ offsety = HEIGHT//2
 available_enemies = ["leafery", "smallchange"]
 map_tile_ids = []
 generating = False
+total_weight = 0
+max_weight = 0
+tile_w_left = ["crossroad", "horiz", "tnoup", "tnodown", "tnoright"]
+tile_w_right = ["crossroad", "horiz", "tnoup", "tnodown", "tnoleft"]
+tile_w_up = ["crossroad", "vert", "tnoleft", "tnodown", "tnoright"]
+tile_w_down = ["crossroad", "vert", "tnoup", "tnoleft", "tnoright"]
 active_things = ["0Paycheck"]
 # 0 - upgrade, 1 - greater curse, 2 - curse, 3 - temporary enemy, 4 - enemy
 level = 1
+
+def generate_map():
+    global total_weight, generating
+    
+    map_sprs.empty()
+    map_tile_ids.clear()
+    total_weight = 0
+    spawn_tile = Tile(0, 0, "spawn")
+    map_sprs.add(spawn_tile)
+    generation_queue = [spawn_tile]
+    while generation_queue and total_weight < max_weight:
+        current_tile = generation_queue.pop(0)
+        for side in current_tile.sides:
+            if total_weight >= max_weight:
+                break
+            new_x, new_y = current_tile.mapx, current_tile.mapy
+            if side == 1:
+                new_y -= 250
+            elif side == 2:
+                new_x += 250
+            elif side == 3:
+                new_y += 250
+            elif side == 4:
+                new_x -= 250
+            already_exists = any(t.mapx == new_x and t.mapy == new_y for t in map_sprs)
+            if not already_exists:
+                if side == 1:
+                    new_tile = Tile(new_x, new_y, choice(tile_w_down))
+                elif side == 2:
+                    new_tile = Tile(new_x, new_y, choice(tile_w_left))
+                elif side == 3:
+                    new_tile = Tile(new_x, new_y, choice(tile_w_up))
+                elif side == 4:
+                    new_tile = Tile(new_x, new_y, choice(tile_w_right))
+                map_sprs.add(new_tile)
+                generation_queue.append(new_tile)
+                
+    generating = False
 
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -34,117 +78,118 @@ class Player(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
     def handle_input(self, keys):
-        global offsetx, offsety
-        if keys[pygame.K_w] and not keys[pygame.K_LEFTBRACKET] and not keys[pygame.K_RIGHTBRACKET]:
-            offsety += self.speed
-            self.mapy -= self.speed
-        if keys[pygame.K_s] and not keys[pygame.K_LEFTBRACKET] and not keys[pygame.K_RIGHTBRACKET]:
-            offsety -= self.speed
-            self.mapy += self.speed
-        if keys[pygame.K_a] and not keys[pygame.K_LEFTBRACKET] and not keys[pygame.K_RIGHTBRACKET]:
-            offsetx += self.speed
-            self.mapx -= self.speed
-        if keys[pygame.K_d] and not keys[pygame.K_LEFTBRACKET] and not keys[pygame.K_RIGHTBRACKET]:
-            offsetx -= self.speed
-            self.mapx += self.speed
-        if keys[pygame.K_SPACE]:
-            if self.jump_cd <= 0:
-                if self.jumps >= 1:
-                    self.jump_cd = 10
-                    self.height += 30
-                    self.jumps -= 1
-        if keys[pygame.K_LEFTBRACKET] and not keys[pygame.K_RIGHTBRACKET]:
-            if keys[pygame.K_w]:
-                if self.ability_cd <= 0:
-                    offsety += self.speed * 2
-                    self.mapy -= self.speed * 2
-                    self.stamina -= 1
-                else: 
-                    offsety += self.speed
-                    self.mapy -= self.speed
-            if keys[pygame.K_s]:
-                if self.ability_cd <= 0:
-                    offsety -= self.speed * 2
-                    self.mapy += self.speed * 2
-                    self.stamina -= 1
-                else:
-                    offsety -= self.speed
-                    self.mapy += self.speed
-            if keys[pygame.K_a]:
-                if self.ability_cd <= 0:
-                    offsetx += self.speed * 2
-                    self.mapx -= self.speed * 2
-                    self.stamina -= 1
-                else:
-                    offsetx += self.speed
-                    self.mapx -= self.speed
-            if keys[pygame.K_d]:
-                if self.ability_cd <= 0:
-                    offsetx -= self.speed * 2
-                    self.mapx += self.speed * 2
-                    self.stamina -= 1
-                else:
-                    offsetx -= self.speed
-                    self.mapx += self.speed
-            if self.stamina <= 0:
-                self.ability_cd = 150
-        else:
-            if self.stamina < self.max_stamina:
-                self.stamina += 0.5
-        if keys[pygame.K_RIGHTBRACKET] and not keys[pygame.K_LEFTBRACKET]:
-            if keys[pygame.K_w]:
-                if self.ability_cd <= 0:
-                    offsety += self.speed * 2
-                    self.mapy -= self.speed * 2
-                    self.stamina -= 1
-                    if self.platform > 0:
+        global offsetx, offsety, generating
+        if generating == False:
+            if keys[pygame.K_w] and not keys[pygame.K_LEFTBRACKET] and not keys[pygame.K_RIGHTBRACKET]:
+                offsety += self.speed
+                self.mapy -= self.speed
+            if keys[pygame.K_s] and not keys[pygame.K_LEFTBRACKET] and not keys[pygame.K_RIGHTBRACKET]:
+                offsety -= self.speed
+                self.mapy += self.speed
+            if keys[pygame.K_a] and not keys[pygame.K_LEFTBRACKET] and not keys[pygame.K_RIGHTBRACKET]:
+                offsetx += self.speed
+                self.mapx -= self.speed
+            if keys[pygame.K_d] and not keys[pygame.K_LEFTBRACKET] and not keys[pygame.K_RIGHTBRACKET]:
+                offsetx -= self.speed
+                self.mapx += self.speed
+            if keys[pygame.K_SPACE]:
+                if self.jump_cd <= 0:
+                    if self.jumps >= 1:
+                        self.jump_cd = 10
+                        self.height += 30
+                        self.jumps -= 1
+            if keys[pygame.K_LEFTBRACKET] and not keys[pygame.K_RIGHTBRACKET]:
+                if keys[pygame.K_w]:
+                    if self.ability_cd <= 0:
+                        offsety += self.speed * 2
+                        self.mapy -= self.speed * 2
                         self.stamina -= 1
-                        self.platform -= 1
-                        self.height += 2
-                else: 
-                    offsety += self.speed
-                    self.mapy -= self.speed
-            if keys[pygame.K_s]:
-                if self.ability_cd <= 0:
-                    offsety -= self.speed * 2
-                    self.mapy += self.speed * 2
-                    self.stamina -= 1
-                    if self.platform > 0:
+                    else: 
+                        offsety += self.speed
+                        self.mapy -= self.speed
+                if keys[pygame.K_s]:
+                    if self.ability_cd <= 0:
+                        offsety -= self.speed * 2
+                        self.mapy += self.speed * 2
                         self.stamina -= 1
-                        self.platform -= 1
-                        self.height += 2
-                else:
-                    offsety -= self.speed
-                    self.mapy += self.speed
-            if keys[pygame.K_a]:
-                if self.ability_cd <= 0:
-                    offsetx += self.speed * 2
-                    self.mapx -= self.speed * 2
-                    self.stamina -= 1
-                    if self.platform > 0:
+                    else:
+                        offsety -= self.speed
+                        self.mapy += self.speed
+                if keys[pygame.K_a]:
+                    if self.ability_cd <= 0:
+                        offsetx += self.speed * 2
+                        self.mapx -= self.speed * 2
                         self.stamina -= 1
-                        self.platform -= 1
-                        self.height += 2
-                else:
-                    offsetx += self.speed
-                    self.mapx -= self.speed
-            if keys[pygame.K_d]:
-                if self.ability_cd <= 0:
-                    offsetx -= self.speed * 2
-                    self.mapx += self.speed * 2
-                    self.stamina -= 1
-                    if self.platform > 0:
+                    else:
+                        offsetx += self.speed
+                        self.mapx -= self.speed
+                if keys[pygame.K_d]:
+                    if self.ability_cd <= 0:
+                        offsetx -= self.speed * 2
+                        self.mapx += self.speed * 2
                         self.stamina -= 1
-                        self.platform -= 1
-                        self.height += 2
-                else:
-                    offsetx -= self.speed
-                    self.mapx += self.speed
-            if self.stamina <= 0:
-                self.ability_cd = 240
-        else:
-            if self.stamina < self.max_stamina:
-                self.stamina += 0.5
+                    else:
+                        offsetx -= self.speed
+                        self.mapx += self.speed
+                if self.stamina <= 0:
+                    self.ability_cd = 150
+            else:
+                if self.stamina < self.max_stamina:
+                    self.stamina += 0.5
+            if keys[pygame.K_RIGHTBRACKET] and not keys[pygame.K_LEFTBRACKET]:
+                if keys[pygame.K_w]:
+                    if self.ability_cd <= 0:
+                        offsety += self.speed * 2
+                        self.mapy -= self.speed * 2
+                        self.stamina -= 1
+                        if self.platform > 0:
+                            self.stamina -= 1
+                            self.platform -= 1
+                            self.height += 2
+                    else: 
+                        offsety += self.speed
+                        self.mapy -= self.speed
+                if keys[pygame.K_s]:
+                    if self.ability_cd <= 0:
+                        offsety -= self.speed * 2
+                        self.mapy += self.speed * 2
+                        self.stamina -= 1
+                        if self.platform > 0:
+                            self.stamina -= 1
+                            self.platform -= 1
+                            self.height += 2
+                    else:
+                        offsety -= self.speed
+                        self.mapy += self.speed
+                if keys[pygame.K_a]:
+                    if self.ability_cd <= 0:
+                        offsetx += self.speed * 2
+                        self.mapx -= self.speed * 2
+                        self.stamina -= 1
+                        if self.platform > 0:
+                            self.stamina -= 1
+                            self.platform -= 1
+                            self.height += 2
+                    else:
+                        offsetx += self.speed
+                        self.mapx -= self.speed
+                if keys[pygame.K_d]:
+                    if self.ability_cd <= 0:
+                        offsetx -= self.speed * 2
+                        self.mapx += self.speed * 2
+                        self.stamina -= 1
+                        if self.platform > 0:
+                            self.stamina -= 1
+                            self.platform -= 1
+                            self.height += 2
+                    else:
+                        offsetx -= self.speed
+                        self.mapx += self.speed
+                if self.stamina <= 0:
+                    self.ability_cd = 240
+            else:
+                if self.stamina < self.max_stamina:
+                    self.stamina += 0.5
 
     def update(self):
         global offsetx, offsety
@@ -164,27 +209,76 @@ class Player(pygame.sprite.Sprite):
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, x, y, type):
+        global total_weight
         super().__init__()
         self.type = type
         self.weight = None
         self.mapx = x
         self.mapy = y
+        self.weight = 0
+        self.has_generated = False
         if self.type == "spawn":
             self.image = images.tiles["spawn"]
-            self.exit_down = True
-            self.exit_left = True
-            self.exit_right = True
-            self.exit_up = True
+            self.sides = [1,2,3,4]
+            self.weight = 0
             self.id = 0
+        elif self.type == "horiz":
+            self.image = images.tiles["horiz"]
+            self.sides = [2,4]
+            self.weight = 7
+            self.id = max(map_tile_ids) + 1
+        elif self.type == "vert":
+            self.image = images.tiles["vert"]
+            self.sides = [1,3]
+            self.weight = 7
+            self.id = max(map_tile_ids) + 1
+        elif self.type == "crossroad":
+            self.image = images.tiles["crossroad"]
+            self.sides = [1,2,3,4]
+            self.weight = 13
+            self.id = max(map_tile_ids) + 1
+        elif self.type == "tnoleft":
+            self.image = images.tiles["tnoleft"]
+            self.sides = [1,2,3]
+            self.weight = 10
+            self.id = max(map_tile_ids) + 1
+        elif self.type == "tnoright":
+            self.image = images.tiles["tnoright"]
+            self.sides = [1,3,4]
+            self.weight = 10
+            self.id = max(map_tile_ids) + 1
+        elif self.type == "tnoup":
+            self.image = images.tiles["tnoup"]
+            self.sides = [2,3,4]
+            self.weight = 10
+            self.id = max(map_tile_ids) + 1
+        elif self.type == "tnodown":
+            self.image = images.tiles["tnodown"]
+            self.sides = [1,2,4]
+            self.weight = 10
+            self.id = max(map_tile_ids) + 1
         map_tile_ids.append(self.id)
+        total_weight += self.weight
         self.rect = self.image.get_rect()
-        self.mask = pygame.mask.from_surface(self.image)
+        self.firstmask = pygame.mask.from_surface(self.image)
+        self.w, self.h = self.image.get_size()
+        self.mask = self.firstmask.scale((self.w-2, self.h-2))
         self.rect.topleft = ((self.mapx + offsetx - 125, self.mapy + offsety - 125))
 
     def update(self):
-        self.rect = self.image.get_rect()
-        self.mask = pygame.mask.from_surface(self.image)
+        global total_weight, generating
         self.rect.topleft = ((self.mapx + offsetx - 125, self.mapy + offsety - 125))
+        if generating == True and total_weight < max_weight and not self.has_generated:
+            self.has_generated = True
+        elif generating == True and total_weight >= max_weight:
+            generating = False
+        map_sprs.remove(self)
+        if pygame.sprite.spritecollide(self, map_sprs, False, pygame.sprite.collide_mask):
+            self.kill()
+            if self.id in map_tile_ids:
+                map_tile_ids.pop(map_tile_ids.index(self.id))
+            total_weight -= self.weight
+        map_sprs.add(self)
 
 class JumpUI(pygame.sprite.Sprite):
     def __init__(self):
@@ -237,7 +331,7 @@ class Choice1(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
     def update(self, keys):
-        global offsetx, offsety, generating
+        global offsetx, offsety, generating, max_weight
         if self.type == "none":
             self.image = images.empty
         elif self.type == "enemy":
@@ -273,11 +367,12 @@ class Choice1(pygame.sprite.Sprite):
                     if choice2.next == "level":
                         player.status = 2
                         generating = True
-                        player.mapx = 38
-                        player.mapy = 38
-                        offsetx = WIDTH//2 - 38
-                        offsety = HEIGHT//2 - 38
-                        map_sprs.add(Tile(0,0,"spawn"))
+                        player.mapx = -15
+                        player.mapy = -15
+                        offsetx = WIDTH//2 + 15
+                        offsety = HEIGHT//2 + 15
+                        max_weight = level*40
+                        generate_map()
                         if level % 3 == 0:
                             choice2.next = "intermissioncurse"
                         elif str(level)[len(str(level))-1] == 3 or str(level)[len(str(level))-1] == 5:
@@ -308,7 +403,7 @@ class Choice2(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
     def update(self, keys):
-        global offsetx, offsety, description, generating
+        global offsetx, offsety, generating, max_weight
         if self.type == "continue":
             self.image = images.cont
             if -50 <= player.mapx - self.mapx <= 20 and -50 <= player.mapy - self.mapy <= 20:
@@ -328,10 +423,12 @@ class Choice2(pygame.sprite.Sprite):
                     elif self.next == "level":
                         player.status = 2
                         generating = True
-                        player.mapx = 38
-                        player.mapy = 38
-                        offsetx = WIDTH//2 - 38
-                        offsety = HEIGHT//2 - 38
+                        player.mapx = -15
+                        player.mapy = -15
+                        offsetx = WIDTH//2 + 15
+                        offsety = HEIGHT//2 + 15
+                        max_weight = level*40
+                        generate_map()
                         map_sprs.add(Tile(0,0,"spawn"))
                         if level % 2 == 0:
                             self.next = "intermissionenemy"
@@ -379,10 +476,12 @@ class Choice2(pygame.sprite.Sprite):
                     if self.next == "level":
                         player.status = 2
                         generating = True
-                        player.mapx = 0
-                        player.mapy = 0
-                        offsetx = WIDTH//2
-                        offsety = HEIGHT//2
+                        player.mapx = -15
+                        player.mapy = -15
+                        offsetx = WIDTH//2 + 15
+                        offsety = HEIGHT//2 + 15
+                        max_weight = level*40
+                        generate_map()
                         map_sprs.add(Tile(0,0,"spawn"))
                         if level % 3 == 0:
                             self.next = "intermissioncurse"
@@ -412,7 +511,7 @@ class Choice3(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
     def update(self, keys):
-        global offsetx, offsety, generating
+        global offsetx, offsety, generating, max_weight
         if self.type == "none":
             self.image = images.empty
         elif self.type == "enemy":
@@ -448,11 +547,12 @@ class Choice3(pygame.sprite.Sprite):
                     if choice2.next == "level":
                         player.status = 2
                         generating = True
-                        player.mapx = 38
-                        player.mapy = 38
-                        offsetx = WIDTH//2 - 38
-                        offsety = HEIGHT//2 - 38
-                        map_sprs.add(Tile(0,0,"spawn"))
+                        player.mapx = -15
+                        player.mapy = -15
+                        offsetx = WIDTH//2 + 15
+                        offsety = HEIGHT//2 + 15
+                        max_weight = level*40
+                        generate_map()
                         if level % 3 == 0:
                             choice2.next = "intermissioncurse"
                         elif str(level)[len(str(level))-1] == 3 or str(level)[len(str(level))-1] == 5:
