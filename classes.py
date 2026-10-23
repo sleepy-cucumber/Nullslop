@@ -179,12 +179,12 @@ class Tile(pygame.sprite.Sprite):
         map_tile_ids.append(self.id)
         self.rect = self.image.get_rect()
         self.mask = pygame.mask.from_surface(self.image)
-        self.rect.topleft = ((self.mapx + offsetx - 50, self.mapy + offsety - 50))
+        self.rect.topleft = ((self.mapx + offsetx - 125, self.mapy + offsety - 125))
 
     def update(self):
         self.rect = self.image.get_rect()
         self.mask = pygame.mask.from_surface(self.image)
-        self.rect.topleft = ((self.mapx + offsetx - 50, self.mapy + offsety - 50))
+        self.rect.topleft = ((self.mapx + offsetx - 125, self.mapy + offsety - 125))
 
 class JumpUI(pygame.sprite.Sprite):
     def __init__(self):
