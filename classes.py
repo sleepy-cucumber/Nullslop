@@ -7,7 +7,9 @@ offsetx = WIDTH//2
 offsety = HEIGHT//2
 available_enemies = ["leafery", "smallchange"]
 last_id = 0
+coll_id = 0
 generating = False
+collapse = False
 total_weight = 0
 max_weight = 0
 tile_w_left = ["crossroad", "horiz", "tnoup", "tnodown", "tnoright", "lul", "ldl"]
@@ -20,7 +22,7 @@ active_things = ["0Paycheck"]
 level = 1
 
 def generate_map():
-    global total_weight, generating, last_id
+    global total_weight, generating, last_id, coll_id
     
     map_sprs.empty()
     gift_sprs.empty()
@@ -55,7 +57,7 @@ def generate_map():
                     new_tile = Tile(new_x, new_y, choice(tile_w_right))
                 map_sprs.add(new_tile)
                 generation_queue.append(new_tile)
-
+    coll_id = last_id
     make_gifts()
 
 def make_gifts():
@@ -68,6 +70,16 @@ def make_gifts():
     text_gifts = gih_count_font.render(f"0/{player.total_gifts}", False, (255, 255, 255))
     generating = False
 
+def make_golden_gifts():
+    global generating, text_gifts, collapse
+    for tile in map_sprs:
+        for gift_pos in tile.gifts:
+            gift_sprs.add(Gift(tile.mapx + gift_pos[0], tile.mapy + gift_pos[1]))
+    player.gifts_collected = 0
+    player.total_gifts = len(gift_sprs)
+    text_gifts = gih_count_font.render(f"0/{player.total_gifts}", False, (255, 255, 255))
+
+    
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -86,6 +98,8 @@ class Player(pygame.sprite.Sprite):
         self.speed = 3
         self.gifts_collected = 0
         self.total_gifts = 0
+        self.golden_gifts = 0
+        self.gift_multiplier = 2
         self.image = images.player
         self.rect = self.image.get_rect()
         self.rect.topleft = (self.mapx+offsetx, self.mapy+offsety)
@@ -206,7 +220,7 @@ class Player(pygame.sprite.Sprite):
                     self.stamina += 0.5
 
     def update(self):
-        global offsetx, offsety
+        global offsetx, offsety, collapse
         self.rect.topleft = (self.mapx+offsetx, self.mapy+offsety)
         self.jump_cd -= 1
         self.ability_cd -= 1
@@ -220,6 +234,9 @@ class Player(pygame.sprite.Sprite):
             elif self.status == 2:
                 self.status = 3
         self.image.set_alpha(max(0, min(255, ((self.height * 2.55)))))
+        if self.gifts_collected == self.total_gifts and generating == False and self.status == 2 and collapse == False:
+            collapse = True
+            make_golden_gifts()
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, x, y, type):
@@ -305,19 +322,27 @@ class Tile(pygame.sprite.Sprite):
 
 class Gift(pygame.sprite.Sprite):
     def __init__(self, x, y):
+        global collapse
+
         super().__init__()
-        self.image = images.gifts["gift"]
+        if collapse == False:
+            self.image = images.gifts["gift"]
+        else:
+            self.image = images.gifts["goldengift"]
         self.rect = self.image.get_rect()
         self.mapx = x
         self.mapy = y
 
     def update(self):
-        global text_gifts
+        global text_gifts, collapse, text_golden_gifts
         self.rect.topleft = ((self.mapx + offsetx - 125 - 7, self.mapy + offsety - 125 - 7))
         if 200 <= self.rect.x <= WIDTH - 200 and 100 <= self.rect.y <= HEIGHT - 100:
-            if pygame.sprite.spritecollide(self, player_sprite, False, pygame.sprite.collide_rect):
+            if pygame.sprite.spritecollide(self, player_sprite, False, pygame.sprite.collide_rect) and 80 <= player.height <= 120:
                 gift_sprs.remove(self)
                 player.gifts_collected += 1
+                if collapse:
+                    player.golden_gifts += player.gift_multiplier
+                    text_golden_gifts = gih_count_font.render(str(player.golden_gifts), False, (255,255,0))
                 self.kill()
 
 class JumpUI(pygame.sprite.Sprite):
