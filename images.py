@@ -14,6 +14,10 @@ tiles = {
     "tnoright": pygame.image.load("sprites/tiles/tnoright.png"),
     "tnoup": pygame.image.load("sprites/tiles/tnoup.png"),
     "tnodown": pygame.image.load("sprites/tiles/tnodown.png"),
+    "lur": pygame.image.load("sprites/tiles/lur.png"),
+    "ldr": pygame.image.load("sprites/tiles/ldr.png"),
+    "ldl": pygame.image.load("sprites/tiles/ldl.png"),
+    "lul": pygame.image.load("sprites/tiles/lul.png"),
 }
 ui = {
     "jumps": pygame.image.load("sprites/ui/jumps.png").convert_alpha()
@@ -28,6 +32,11 @@ choiceenemies = {
 }
 choiceupgrades = {
     "paycheck": pygame.image.load("sprites/choice/upgrades/Paycheck.png")
+}
+gifts = {
+    "gift": pygame.image.load("sprites/gifts/gift.png"),
+    "goldengift": pygame.image.load("sprites/gifts/goldengift.png"),
+    "mine": pygame.image.load("sprites/gifts/tripmine.png")
 }
 intermission = pygame.image.load("sprites/intermission.png")
 player = pygame.image.load("sprites/player.png").convert_alpha()

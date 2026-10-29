@@ -45,6 +45,7 @@ while running:
     text_stamina = ui_font.render("stm:"+str(player.stamina)+"/"+str(player.max_stamina), False, (255,255,255))
     text_platform = ui_font.render("ptf:"+str(player.platform)+"/"+str(player.max_platform), False, (255,255,255))
     text_abilitycd = ui_font.render("cd:"+str(player.ability_cd), False, (255,255,255))
+    text_gifts = gih_count_font.render(str(player.gifts_collected)+"/"+str(player.total_gifts), False, (255,255,255))
     if choice1.open or choice2.open or choice3.open or reroll.open:
         text_name = gih_count_font.render(description.name, True, (255,255,255))
         text_desc = ui_font.render(description.description, True, (255,255,255))
@@ -118,8 +119,14 @@ while running:
         if player.ability_cd > 0:
             screen.blit(text_abilitycd, (WIDTH//2+25, HEIGHT//2))
     if status == 2:
-        map_sprs.draw(screen)
+        for tile in map_sprs:
+            if -250 <= tile.rect.x <= WIDTH + 250 and -250 <= tile.rect.y <= HEIGHT + 250:
+                screen.blit(tile.image, tile.rect)
         map_sprs.update()
+        for gift in gift_sprs:
+            if -50 <= gift.rect.x <= WIDTH + 50 and -50 <= gift.rect.y <= HEIGHT + 50:
+                screen.blit(gift.image, gift.rect)
+        gift_sprs.update()
         player_sprite.draw(screen)
         player_sprite.update()
         ui_sprites.draw(screen)
@@ -128,6 +135,7 @@ while running:
         screen.blit(text_height, (WIDTH//2, HEIGHT//2+25))
         screen.blit(text_stamina, (WIDTH//2, HEIGHT//2-16))
         screen.blit(text_platform, (WIDTH//2, HEIGHT//2-33))
+        screen.blit(text_gifts, (WIDTH//2 - 50, HEIGHT - 30))
         thinglist_spr.draw(screen)
         thinglist_spr.update(keys)
         thing_sprs.draw(screen)
