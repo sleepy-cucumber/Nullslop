@@ -118,8 +118,9 @@ class Player(pygame.sprite.Sprite):
         self.max_jumps = 1
         self.jumps = self.max_jumps
         self.ability_cd = 30
-        self.max_stamina = 600
+        self.max_stamina = 300
         self.stamina = self.max_stamina
+        self.stm_regen = 0.25
         self.max_platform = 120
         self.platform = self.max_platform
         self.speed = 3
@@ -192,7 +193,7 @@ class Player(pygame.sprite.Sprite):
                     self.ability_cd = 150
             else:
                 if self.stamina < self.max_stamina:
-                    self.stamina += 0.5
+                    self.stamina += self.stm_regen
             if keys[pygame.K_RIGHTBRACKET] and not keys[pygame.K_LEFTBRACKET]:
                 if keys[pygame.K_w]:
                     if self.ability_cd <= 0:
@@ -246,7 +247,7 @@ class Player(pygame.sprite.Sprite):
                     self.ability_cd = 240
             else:
                 if self.stamina < self.max_stamina:
-                    self.stamina += 0.5
+                    self.stamina += self.stm_regen
 
     def update(self):
         global offsetx, offsety, collapse, coll_id, coll_time, max_tiles_this_level
@@ -518,7 +519,7 @@ class Choice1(pygame.sprite.Sprite):
                             self.choicecd = 30
                     if player.level % 3 == 0:
                         player.next = "intermissioncurse"
-                    elif str(player.level)[len(str(player.level))-1] == 3 or str(player.level)[len(str(player.level))-1] == 5:
+                    elif player.level%10 in (3, 5, 8, 0):
                         player.next = "intermissionupgrade"
                     else:
                         player.next = "level"
@@ -594,7 +595,7 @@ class Choice2(pygame.sprite.Sprite):
                         choice1.gambled = False
                         choice2.gambled = False
                         choice3.gambled = False
-                        if player.level % 2 != 0 and str(player.level)[len(str(player.level))-1] != 3 and str(player.level)[len(str(player.level))-1] != 5 and player.level % 3 != 0:
+                        if player.level % 2 != 0 and player.level%10 in (3, 5, 8, 0) and player.level % 3 != 0:
                             player.next = "level"
                         self.choicecd = 30
                     elif player.next == "level":
@@ -610,20 +611,37 @@ class Choice2(pygame.sprite.Sprite):
                             player.next = "intermissionenemy"
                         elif player.level % 3 == 0:
                             player.next = "intermissioncurse"
-                        elif str(player.level)[len(str(player.level))-1] == 3 or str(player.level)[len(str(player.level))-1] == 5:
+                        elif player.level%10 in (3, 5, 8, 0):
                             player.next = "intermissionupgrade"
                         else:
                             player.next = "level"
                     elif player.next == "intermissioncurse":
                         self.choicecd = 30
                         intermission.type = "curse"
-                        if str(player.level)[len(str(player.level))-1] == 3 or str(player.level)[len(str(player.level))-1] == 5:
+                        if player.level%10 in (3, 5, 8, 0):
                             player.next = "intermissionupgrade"
                         else:
                             player.next = "level"
+                            player.status = 2
+                            generating = True
+                            player.mapx = -15
+                            player.mapy = -15
+                            offsetx = WIDTH//2 + 15
+                            offsety = HEIGHT//2 + 15
+                            max_weight = player.level*30
+                            generate_map()
                     elif player.next == "intermissionupgrade":
                         self.choicecd = 30
                         intermission.type = "upgrade"
+                        player.next = "level"
+                        player.status = 2
+                        generating = True
+                        player.mapx = -15
+                        player.mapy = -15
+                        offsetx = WIDTH//2 + 15
+                        offsety = HEIGHT//2 + 15
+                        max_weight = player.level*30
+                        generate_map()
             else:
                 self.open = False
         elif self.type == "none":
@@ -663,7 +681,7 @@ class Choice2(pygame.sprite.Sprite):
                             self.choicecd = 30
                     if player.level % 3 == 0:
                         player.next = "intermissioncurse"
-                    elif str(player.level)[len(str(player.level))-1] == 3 or str(player.level)[len(str(player.level))-1] == 5:
+                    elif player.level%10 in (3, 5, 8, 0):
                         player.next = "intermissionupgrade"
                     else:
                         player.next = "level"
@@ -761,7 +779,7 @@ class Choice3(pygame.sprite.Sprite):
                             self.choicecd = 30
                     if player.level % 3 == 0:
                         player.next = "intermissioncurse"
-                    elif str(player.level)[len(str(player.level))-1] == 3 or str(player.level)[len(str(player.level))-1] == 5:
+                    elif player.level%10 in (3, 5, 8, 0):
                         player.next = "intermissionupgrade"
                     else:
                         player.next = "level"

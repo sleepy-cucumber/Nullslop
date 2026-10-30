@@ -162,7 +162,7 @@ while running:
                 screen.blit(count_text, (text_x, text_y))
         if player.ability_cd > 0:
             screen.blit(text_abilitycd, (WIDTH//2+25, HEIGHT//2))
-        
+
     pygame.display.flip()
 
     clock.tick(FPS)
