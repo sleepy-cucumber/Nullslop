@@ -8,6 +8,8 @@ offsety = HEIGHT//2
 available_enemies = ["leafery", "smallchange"]
 last_id = 0
 coll_id = 0
+coll_time = 300
+collapse_sequence = []
 generating = False
 collapse = False
 total_weight = 0
@@ -19,7 +21,6 @@ tile_w_down = ["crossroad", "vert", "tnoup", "tnoleft", "tnoright", "ldl", "ldr"
 text_gifts = gih_count_font.render("/", False, (255,255,255))
 active_things = ["0Paycheck"]
 # 0 - upgrade, 1 - greater curse, 2 - curse, 3 - temporary enemy, 4 - enemy
-level = 1
 
 def generate_map():
     global total_weight, generating, last_id, coll_id
@@ -57,14 +58,40 @@ def generate_map():
                     new_tile = Tile(new_x, new_y, choice(tile_w_right))
                 map_sprs.add(new_tile)
                 generation_queue.append(new_tile)
-    coll_id = last_id
+    global collapse_sequence
+    if map_sprs:
+        sorted_tiles = sorted(
+            [t for t in map_sprs if t.type != "spawn"],
+            key=lambda t: t.mapx**2 + t.mapy**2,
+            reverse=True
+        )
+        
+        spawn_tile = next(t for t in map_sprs if t.type == "spawn")
+        spawn_tile.id = -100
+        
+        map_sprs.empty()
+        map_sprs.add(spawn_tile)
+        
+        for idx, tile in enumerate(sorted_tiles):
+            tile.id = idx + 1
+            map_sprs.add(tile)
+            
+        coll_id = len(sorted_tiles)
+        global max_tiles_this_level
+        max_tiles_this_level = len(sorted_tiles)
+        
+        collapse_sequence = [t for t in map_sprs if t.type != "spawn"]
+    else:
+        coll_id = 0
+        max_tiles_this_level = 0
+        collapse_sequence = []
     make_gifts()
 
 def make_gifts():
     global generating, text_gifts
     for tile in map_sprs:
         for gift_pos in tile.gifts:
-            gift_sprs.add(Gift(tile.mapx + gift_pos[0], tile.mapy + gift_pos[1]))
+            gift_sprs.add(Gift(tile.mapx + gift_pos[0], tile.mapy + gift_pos[1], tile.id))
     player.gifts_collected = 0
     player.total_gifts = len(gift_sprs)
     text_gifts = gih_count_font.render(f"0/{player.total_gifts}", False, (255, 255, 255))
@@ -74,7 +101,7 @@ def make_golden_gifts():
     global generating, text_gifts, collapse
     for tile in map_sprs:
         for gift_pos in tile.gifts:
-            gift_sprs.add(Gift(tile.mapx + gift_pos[0], tile.mapy + gift_pos[1]))
+            gift_sprs.add(Gift(tile.mapx + gift_pos[0], tile.mapy + gift_pos[1], tile.id))
     player.gifts_collected = 0
     player.total_gifts = len(gift_sprs)
     text_gifts = gih_count_font.render(f"0/{player.total_gifts}", False, (255, 255, 255))
@@ -100,7 +127,9 @@ class Player(pygame.sprite.Sprite):
         self.total_gifts = 0
         self.golden_gifts = 0
         self.gift_multiplier = 2
+        self.level = 1
         self.image = images.player
+        self.next = "intermissionenemy"
         self.rect = self.image.get_rect()
         self.rect.topleft = (self.mapx+offsetx, self.mapy+offsety)
         self.mask = pygame.mask.from_surface(self.image)
@@ -220,7 +249,7 @@ class Player(pygame.sprite.Sprite):
                     self.stamina += 0.5
 
     def update(self):
-        global offsetx, offsety, collapse
+        global offsetx, offsety, collapse, coll_id, coll_time, max_tiles_this_level
         self.rect.topleft = (self.mapx+offsetx, self.mapy+offsety)
         self.jump_cd -= 1
         self.ability_cd -= 1
@@ -236,7 +265,24 @@ class Player(pygame.sprite.Sprite):
         self.image.set_alpha(max(0, min(255, ((self.height * 2.55)))))
         if self.gifts_collected == self.total_gifts and generating == False and self.status == 2 and collapse == False:
             collapse = True
+            beacon_spr.add(Beacon())
             make_golden_gifts()
+
+        global collapse_sequence
+        if collapse:
+            tiles_per_step = max(1, max_tiles_this_level // 10)
+            
+            collapse_sequence = [t for t in collapse_sequence if t.alive()]
+            
+            if collapse_sequence:
+                coll_time -= 1
+                if coll_time <= 0:
+                    targets = collapse_sequence[:tiles_per_step]
+                    for tile in targets:
+                        if tile.type != "spawn":
+                            map_sprs.remove(tile)
+                            tile.kill()
+                    coll_time = 300
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, x, y, type):
@@ -249,64 +295,65 @@ class Tile(pygame.sprite.Sprite):
         self.weight = 0
         self.gifts = []
         if self.type == "spawn":
-            self.image = images.tiles["spawn"]
+            self.image = images.tiles["spawn"].copy()
             self.sides = [1,2,3,4]
             self.weight = 0
         elif self.type == "horiz":
-            self.image = images.tiles["horiz"]
+            self.image = images.tiles["horiz"].copy()
             self.sides = [2,4]
             self.weight = 7
             self.gifts = [(18, 125), (54, 125), (89, 125), (125, 125), (161, 125), (196, 125), (232, 125)]
         elif self.type == "vert":
-            self.image = images.tiles["vert"]
+            self.image = images.tiles["vert"].copy()
             self.sides = [1,3]
             self.weight = 7
             self.gifts = [(125, 18), (125, 54), (125, 89), (125, 125), (125, 161), (125, 196), (125, 232)]
         elif self.type == "crossroad":
-            self.image = images.tiles["crossroad"]
+            self.image = images.tiles["crossroad"].copy()
             self.sides = [1,2,3,4]
             self.weight = 13
             self.gifts = [(18, 125), (54, 125), (89, 125), (125, 125), (161, 125), (196, 125), (232, 125), (125, 18), (125, 54), (125, 89), (125, 161), (125, 196), (125, 232)]
         elif self.type == "tnoleft":
-            self.image = images.tiles["tnoleft"]
+            self.image = images.tiles["tnoleft"].copy()
             self.sides = [1,2,3]
             self.weight = 10
             self.gifts = [(125, 125), (161, 125), (196, 125), (232, 125), (125, 18), (125, 54), (125, 89), (125, 161), (125, 196), (125, 232)]
         elif self.type == "tnoright":
-            self.image = images.tiles["tnoright"]
+            self.image = images.tiles["tnoright"].copy()
             self.sides = [1,3,4]
             self.weight = 10
             self.gifts = [(18, 125), (54, 125), (89, 125), (125, 125), (125, 18), (125, 54), (125, 89), (125, 161), (125, 196), (125, 232)]
         elif self.type == "tnoup":
-            self.image = images.tiles["tnoup"]
+            self.image = images.tiles["tnoup"].copy()
             self.sides = [2,3,4]
             self.weight = 10
             self.gifts = [(18, 125), (54, 125), (89, 125), (125, 125), (161, 125), (196, 125), (232, 125), (125, 161), (125, 196), (125, 232)]
         elif self.type == "tnodown":
-            self.image = images.tiles["tnodown"]
+            self.image = images.tiles["tnodown"].copy()
             self.sides = [1,2,4]
             self.weight = 10
             self.gifts = [(18, 125), (54, 125), (89, 125), (125, 125), (161, 125), (196, 125), (232, 125), (125, 18), (125, 54), (125, 89)]
         elif self.type == "lur":
-            self.image = images.tiles["lur"]
+            self.image = images.tiles["lur"].copy()
             self.sides = [1,2]
             self.weight = 7
             self.gifts = [(125, 125), (161, 125), (196, 125), (232, 125), (125, 18), (125, 54), (125, 89)]
         elif self.type == "ldr":
-            self.image = images.tiles["ldr"]
+            self.image = images.tiles["ldr"].copy()
             self.sides = [2,3]
             self.weight = 7
             self.gifts = [(125, 125), (161, 125), (196, 125), (232, 125), (125, 161), (125, 196), (125, 232)]
         elif self.type == "ldl":
-            self.image = images.tiles["ldl"]
+            self.image = images.tiles["ldl"].copy()
             self.sides = [3,4]
             self.weight = 7
             self.gifts = [(18, 125), (54, 125), (89, 125), (125, 125), (125, 161), (125, 196), (125, 232)]
         elif self.type == "lul":
-            self.image = images.tiles["lul"]
+            self.image = images.tiles["lul"].copy()
             self.sides = [1,4]
             self.weight = 7
             self.gifts = [(18, 125), (54, 125), (89, 125), (125, 125), (125, 18), (125, 54), (125, 89)]
+            
         self.id = last_id + 1
         last_id = self.id
         total_weight += self.weight
@@ -315,16 +362,27 @@ class Tile(pygame.sprite.Sprite):
         self.w, self.h = self.image.get_size()
         self.mask = self.firstmask.scale((self.w-2, self.h-2))
         self.rect.topleft = ((self.mapx + offsetx - 125, self.mapy + offsety - 125))
+        self.image.set_alpha(255)
 
     def update(self):
-        global total_weight, generating
+        global total_weight, generating, coll_id, coll_time, max_tiles_this_level, collapse_sequence
         self.rect.topleft = ((self.mapx + offsetx - 125, self.mapy + offsety - 125))
+        if collapse:
+            tiles_per_step = max(1, max_tiles_this_level // 10)
+            
+            if collapse_sequence and any(self.mapx == t.mapx and self.mapy == t.mapy for t in collapse_sequence[:tiles_per_step]):
+                self.image.set_alpha(128)
+            else:
+                self.image.set_alpha(255)
+        else:
+            self.image.set_alpha(255)
 
 class Gift(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, tile_id):
         global collapse
 
         super().__init__()
+        self.tile_id = tile_id
         if collapse == False:
             self.image = images.gifts["gift"]
         else:
@@ -343,6 +401,12 @@ class Gift(pygame.sprite.Sprite):
                 if collapse:
                     player.golden_gifts += player.gift_multiplier
                     text_golden_gifts = gih_count_font.render(str(player.golden_gifts), False, (255,255,0))
+                self.kill()
+                return
+        if collapse and not pygame.sprite.spritecollide(self, map_sprs, False, pygame.sprite.collide_rect):
+            tile_still_exists = any(tile.id == self.tile_id for tile in map_sprs)
+            if not tile_still_exists:
+                gift_sprs.remove(self)
                 self.kill()
 
 class JumpUI(pygame.sprite.Sprite):
@@ -376,10 +440,19 @@ class Intermission(pygame.sprite.Sprite):
             choice1.type = "none"
             choice2.type = "continue"
             choice3.type = "none"
-        if player.status == 1 and self.type == "enemy":
-            choice1.type = "enemy"
-            choice2.type = "enemy"
-            choice3.type = "enemy"
+        if player.status == 1:
+            if self.type == "enemy":
+                choice1.type = "enemy"
+                choice2.type = "enemy"
+                choice3.type = "enemy"
+            elif self.type == "curse":
+                choice1.type = "none"
+                choice2.type = "continue"
+                choice3.type = "none"
+            elif self.type == "upgrade":
+                choice1.type = "none"
+                choice2.type = "continue"
+                choice3.type = "none"
         self.rect.topleft = (self.mapx-200+offsetx, self.mapy-150+offsety)
 
 class Choice1(pygame.sprite.Sprite):
@@ -394,6 +467,18 @@ class Choice1(pygame.sprite.Sprite):
         self.gambled = False
         self.choicecd = 0
         self.rect = self.image.get_rect()
+        if player.level == 1:
+            self.type = "none"
+        else:
+            match player.next:
+                case "intermissionenemy":
+                    self.type = "enemy"
+                case "intermissioncurse":
+                    self.type = "none"
+                case "intermissionupgrade":
+                    self.type = "none"
+                case "level":
+                    self.type = "none"
 
     def update(self, keys):
         global offsetx, offsety, generating, max_weight
@@ -431,24 +516,38 @@ class Choice1(pygame.sprite.Sprite):
                             self.image = images.empty
                             self.type = "none"
                             self.choicecd = 30
-                    if choice2.next == "level":
+                    if player.level % 3 == 0:
+                        player.next = "intermissioncurse"
+                    elif str(player.level)[len(str(player.level))-1] == 3 or str(player.level)[len(str(player.level))-1] == 5:
+                        player.next = "intermissionupgrade"
+                    else:
+                        player.next = "level"
+                    if player.next == "level":
                         player.status = 2
                         generating = True
                         player.mapx = -15
                         player.mapy = -15
                         offsetx = WIDTH//2 + 15
                         offsety = HEIGHT//2 + 15
-                        max_weight = level*40
+                        max_weight = player.level*30
                         generate_map()
-                        if level % 3 == 0:
-                            choice2.next = "intermissioncurse"
-                        elif str(level)[len(str(level))-1] == 3 or str(level)[len(str(level))-1] == 5:
-                            choice2.next = "intermissionupgrade"
-                        else:
-                            choice2.next = "level"
+                    elif player.next == "intermissioncurse":
+                        intermission.type = "curse"
+                        self.type = "none"
+                        choice2.type = "continue"
+                        choice3.type = "none"
+                    elif player.next == "intermissionupgrade":
+                        intermission.type = "upgrade"
+                        self.type = "none"
+                        choice2.type = "continue"
+                        choice3.type = "none"
                     
             else:
                 self.open = False
+        elif self.type == "curse":
+            pass
+        elif self.type == "upgrade":
+            pass
         else:
             pass
         self.rect = self.image.get_rect()
@@ -462,12 +561,23 @@ class Choice2(pygame.sprite.Sprite):
         self.mapy = -98
         self.open = False
         self.type = None
-        self.next = "intermissionenemy"
         self.thing = None
         self.gambled = False
         self.choicecd = 0
         self.image = images.placeholder
         self.rect = self.image.get_rect()
+        if player.level == 1:
+            self.type = "none"
+        else:
+            match player.next:
+                case "intermissionenemy":
+                    self.type = "enemy"
+                case "intermissioncurse":
+                    self.type = "continue"
+                case "intermissionupgrade":
+                    self.type = "continue"
+                case "level":
+                    self.type = "continue"
 
     def update(self, keys):
         global offsetx, offsety, generating, max_weight
@@ -478,32 +588,42 @@ class Choice2(pygame.sprite.Sprite):
                 description.change_text("Continue", "Press F")
                 if keys[pygame.K_f] and self.choicecd <= 0:
                     self.open = False
-                    if self.next == "intermissionenemy":
+                    if player.next == "intermissionenemy":
                         player.status = 1
                         intermission.type = "enemy"
                         choice1.gambled = False
                         choice2.gambled = False
                         choice3.gambled = False
-                        if level % 2 != 0 and str(level)[len(str(level))-1] != 3 and str(level)[len(str(level))-1] != 5 and level % 3 != 0:
-                            self.next = "level"
+                        if player.level % 2 != 0 and str(player.level)[len(str(player.level))-1] != 3 and str(player.level)[len(str(player.level))-1] != 5 and player.level % 3 != 0:
+                            player.next = "level"
                         self.choicecd = 30
-                    elif self.next == "level":
+                    elif player.next == "level":
                         player.status = 2
                         generating = True
                         player.mapx = -15
                         player.mapy = -15
                         offsetx = WIDTH//2 + 15
                         offsety = HEIGHT//2 + 15
-                        max_weight = level*40
+                        max_weight = player.level*30
                         generate_map()
-                        if level % 2 == 0:
-                            self.next = "intermissionenemy"
-                        elif level % 3 == 0:
-                            self.next = "intermissioncurse"
-                        elif str(level)[len(str(level))-1] == 3 or str(level)[len(str(level))-1] == 5:
-                            self.next = "intermissionupgrade"
+                        if player.level % 2 == 0:
+                            player.next = "intermissionenemy"
+                        elif player.level % 3 == 0:
+                            player.next = "intermissioncurse"
+                        elif str(player.level)[len(str(player.level))-1] == 3 or str(player.level)[len(str(player.level))-1] == 5:
+                            player.next = "intermissionupgrade"
                         else:
-                            self.next = "level"
+                            player.next = "level"
+                    elif player.next == "intermissioncurse":
+                        self.choicecd = 30
+                        intermission.type = "curse"
+                        if str(player.level)[len(str(player.level))-1] == 3 or str(player.level)[len(str(player.level))-1] == 5:
+                            player.next = "intermissionupgrade"
+                        else:
+                            player.next = "level"
+                    elif player.next == "intermissionupgrade":
+                        self.choicecd = 30
+                        intermission.type = "upgrade"
             else:
                 self.open = False
         elif self.type == "none":
@@ -541,23 +661,37 @@ class Choice2(pygame.sprite.Sprite):
                             self.image = images.empty
                             self.type = "none"
                             self.choicecd = 30
-                    if self.next == "level":
+                    if player.level % 3 == 0:
+                        player.next = "intermissioncurse"
+                    elif str(player.level)[len(str(player.level))-1] == 3 or str(player.level)[len(str(player.level))-1] == 5:
+                        player.next = "intermissionupgrade"
+                    else:
+                        player.next = "level"
+                    if player.next == "level":
                         player.status = 2
                         generating = True
                         player.mapx = -15
                         player.mapy = -15
                         offsetx = WIDTH//2 + 15
                         offsety = HEIGHT//2 + 15
-                        max_weight = level*40
+                        max_weight = player.level*30
                         generate_map()
-                        if level % 3 == 0:
-                            self.next = "intermissioncurse"
-                        elif str(level)[len(str(level))-1] == 3 or str(level)[len(str(level))-1] == 5:
-                            self.next = "intermissionupgrade"
-                        else:
-                            self.next = "level"
+                    elif player.next == "intermissioncurse":
+                        intermission.type = "curse"
+                        choice1.type = "none"
+                        self.type = "continue"
+                        choice3.type = "none"
+                    elif player.next == "intermissionupgrade":
+                        intermission.type = "upgrade"
+                        choice1.type = "none"
+                        self.type = "continue"
+                        choice3.type = "none"
             else:
                 self.open = False
+        elif self.type == "curse":
+            pass
+        elif self.type == "upgrade":
+            pass
         else:
             pass
         self.rect = self.image.get_rect()
@@ -576,6 +710,18 @@ class Choice3(pygame.sprite.Sprite):
         self.gambled = False
         self.choicecd = 0
         self.rect = self.image.get_rect()
+        if player.level == 1:
+            self.type = "none"
+        else:
+            match player.next:
+                case "intermissionenemy":
+                    self.type = "enemy"
+                case "intermissioncurse":
+                    self.type = "none"
+                case "intermissionupgrade":
+                    self.type = "none"
+                case "level":
+                    self.type = "none"
 
     def update(self, keys):
         global offsetx, offsety, generating, max_weight
@@ -613,23 +759,37 @@ class Choice3(pygame.sprite.Sprite):
                             self.image = images.empty
                             self.type = "none"
                             self.choicecd = 30
-                    if choice2.next == "level":
+                    if player.level % 3 == 0:
+                        player.next = "intermissioncurse"
+                    elif str(player.level)[len(str(player.level))-1] == 3 or str(player.level)[len(str(player.level))-1] == 5:
+                        player.next = "intermissionupgrade"
+                    else:
+                        player.next = "level"
+                    if player.next == "level":
                         player.status = 2
                         generating = True
                         player.mapx = -15
                         player.mapy = -15
                         offsetx = WIDTH//2 + 15
                         offsety = HEIGHT//2 + 15
-                        max_weight = level*40
+                        max_weight = player.level*30
                         generate_map()
-                        if level % 3 == 0:
-                            choice2.next = "intermissioncurse"
-                        elif str(level)[len(str(level))-1] == 3 or str(level)[len(str(level))-1] == 5:
-                            choice2.next = "intermissionupgrade"
-                        else:
-                            choice2.next = "level"
+                    elif player.next == "intermissioncurse":
+                        intermission.type = "curse"
+                        choice1.type = "none"
+                        choice2.type = "continue"
+                        self.type = "none"
+                    elif player.next == "intermissionupgrade":
+                        intermission.type = "upgrade"
+                        choice1.type = "none"
+                        choice2.type = "continue"
+                        self.type = "none"
             else:
                 self.open = False
+        elif self.type == "curse":
+            pass
+        elif self.type == "upgrade":
+            pass
         else:
             pass
         self.rect = self.image.get_rect()
@@ -752,7 +912,63 @@ class Thing(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.topleft = (self.x, self.y)
         
-        
+class Beacon(pygame.sprite.Sprite):
+    def __init__(self):
+        global offsetx, offsety
+        super().__init__()
+        self.mapx = 0
+        self.mapy = 0
+        self.image = images.beacon
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (self.mapx+offsetx-15, self.mapy+offsety-15)
+
+    def update(self):
+        global active_things, collapse, coll_time, coll_id
+
+        self.rect.topleft = (self.mapx+offsetx-15, self.mapy+offsety-15)
+        if 200 <= self.rect.x <= WIDTH - 200 and 100 <= self.rect.y <= HEIGHT - 100:
+            if pygame.sprite.spritecollide(self, player_sprite, False, pygame.sprite.collide_rect):
+                player.status = 1
+                for tile in map_sprs:
+                    tile.kill()
+                for gift in gift_sprs:
+                    gift.kill()
+                map_sprs.empty()
+                gift_sprs.empty()
+                choice1.gambled = False
+                choice2.gambled = False
+                choice3.gambled = False
+                last_digit = player.level % 10
+                collapse = False
+                player.level += 1
+                player.golden_gifts += 50*active_things.count("0Paycheck")
+
+                if player.level == 1 or player.level % 2 == 0:
+                    player.next = "intermissionenemy"
+                    intermission.type = "enemy"
+                    choice1.type = "enemy"
+                    choice2.type = "enemy"
+                    choice3.type = "enemy"
+                elif player.level % 3 == 0:
+                    player.next = "intermissioncurse"
+                    intermission.type = "curse"
+                    choice1.type = "none"       
+                    choice2.type = "continue"   
+                    choice3.type = "none"
+                elif last_digit in (3, 5, 8, 0):
+                    player.next = "intermissionupgrade"
+                    intermission.type = "upgrade"
+                    choice1.type = "none"       
+                    choice2.type = "continue"   
+                    choice3.type = "none"
+                else:
+                    player.next = "level"
+                    choice1.type = "none"
+                    choice2.type = "continue"
+                    choice3.type = "none"
+                coll_time = 300
+                self.kill()
+
 
 player = Player()
 intermission = Intermission()
@@ -775,3 +991,4 @@ choice_sprites = pygame.sprite.Group(choice1, choice2, choice3)
 reroll_spr = pygame.sprite.Group(reroll)
 thinglist_spr = pygame.sprite.Group(thinglist)
 gift_sprs = pygame.sprite.Group()
+beacon_spr = pygame.sprite.Group()

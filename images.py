@@ -6,18 +6,18 @@ pygame.display.set_mode((WIDTH, HEIGHT))
 icon = pygame.image.load("sprites/icon.png")
 pygame.display.set_icon(icon)
 tiles = {
-    "spawn": pygame.image.load("sprites/tiles/spawn.png"),
-    "crossroad": pygame.image.load("sprites/tiles/crossroad.png"),
-    "horiz": pygame.image.load("sprites/tiles/horiz.png"),
-    "vert": pygame.image.load("sprites/tiles/vert.png"),
-    "tnoleft": pygame.image.load("sprites/tiles/tnoleft.png"),
-    "tnoright": pygame.image.load("sprites/tiles/tnoright.png"),
-    "tnoup": pygame.image.load("sprites/tiles/tnoup.png"),
-    "tnodown": pygame.image.load("sprites/tiles/tnodown.png"),
-    "lur": pygame.image.load("sprites/tiles/lur.png"),
-    "ldr": pygame.image.load("sprites/tiles/ldr.png"),
-    "ldl": pygame.image.load("sprites/tiles/ldl.png"),
-    "lul": pygame.image.load("sprites/tiles/lul.png"),
+    "spawn": pygame.image.load("sprites/tiles/spawn.png").convert_alpha(),
+    "crossroad": pygame.image.load("sprites/tiles/crossroad.png").convert_alpha(),
+    "horiz": pygame.image.load("sprites/tiles/horiz.png").convert_alpha(),
+    "vert": pygame.image.load("sprites/tiles/vert.png").convert_alpha(),
+    "tnoleft": pygame.image.load("sprites/tiles/tnoleft.png").convert_alpha(),
+    "tnoright": pygame.image.load("sprites/tiles/tnoright.png").convert_alpha(),
+    "tnoup": pygame.image.load("sprites/tiles/tnoup.png").convert_alpha(),
+    "tnodown": pygame.image.load("sprites/tiles/tnodown.png").convert_alpha(),
+    "lur": pygame.image.load("sprites/tiles/lur.png").convert_alpha(),
+    "ldr": pygame.image.load("sprites/tiles/ldr.png").convert_alpha(),
+    "ldl": pygame.image.load("sprites/tiles/ldl.png").convert_alpha(),
+    "lul": pygame.image.load("sprites/tiles/lul.png").convert_alpha(),
 }
 ui = {
     "jumps": pygame.image.load("sprites/ui/jumps.png").convert_alpha()
@@ -46,3 +46,4 @@ placeholder = pygame.image.load("sprites/choice/placeholder.png")
 empty = pygame.image.load("sprites/choice/empty.png")
 description = pygame.image.load("sprites/description.png").convert_alpha()
 thinglist = pygame.image.load("sprites/activethings.png").convert_alpha()
+beacon = pygame.image.load("sprites/beacon.png")

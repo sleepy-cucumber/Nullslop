@@ -47,6 +47,7 @@ while running:
     text_abilitycd = ui_font.render("cd:"+str(player.ability_cd), False, (255,255,255))
     text_gifts = gih_count_font.render(str(player.gifts_collected)+"/"+str(player.total_gifts), False, (255,255,255))
     text_golden_gifts = gih_count_font.render(str(player.golden_gifts), False, (255,255,0))
+    text_level = ui_font.render("Level "+str(player.level), False, (255,255,255))
     if choice1.open or choice2.open or choice3.open or reroll.open:
         text_name = gih_count_font.render(description.name, True, (255,255,255))
         text_desc = ui_font.render(description.description, True, (255,255,255))
@@ -102,6 +103,7 @@ while running:
         screen.blit(text_height, (WIDTH//2, HEIGHT//2+25))
         screen.blit(text_stamina, (WIDTH//2, HEIGHT//2-16))
         screen.blit(text_platform, (WIDTH//2, HEIGHT//2-33))
+        screen.blit(text_level, (710, 10))
         if thinglist.on:
             screen.blit(text_golden_gifts, (110, 210))
         else:
@@ -134,6 +136,8 @@ while running:
         gift_sprs.update()
         player_sprite.draw(screen)
         player_sprite.update()
+        beacon_spr.draw(screen)
+        beacon_spr.update()
         ui_sprites.draw(screen)
         ui_sprites.update()
         screen.blit(text_jumps, (jumpui.x, jumpui.y + 32))
@@ -141,6 +145,7 @@ while running:
         screen.blit(text_stamina, (WIDTH//2, HEIGHT//2-16))
         screen.blit(text_platform, (WIDTH//2, HEIGHT//2-33))
         screen.blit(text_gifts, (WIDTH//2 - 50, HEIGHT - 30))
+        screen.blit(text_level, (710, 10))
         if thinglist.on:
             screen.blit(text_golden_gifts, (110, 210))
         else:
