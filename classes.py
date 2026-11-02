@@ -141,6 +141,7 @@ class Player(pygame.sprite.Sprite):
         self.golden_gifts = 0
         self.gift_multiplier = 2
         self.level = 1
+        self.bg = background_colors["1"]
         self.touched_enemy = False
         self.image = images.player
         self.next = "intermissionenemy"
@@ -981,6 +982,16 @@ class Beacon(pygame.sprite.Sprite):
                 last_digit = player.level % 10
                 collapse = False
                 player.level += 1
+                if player.level == 5:
+                    player.bg = choice(background_colors["5"])
+                elif player.level == 10:
+                    player.bg = choice(background_colors["10"])
+                elif player.level == 20:
+                    player.bg = choice(background_colors["20"])
+                elif player.level == 30:
+                    player.bg = background_colors["30"]
+                elif player.level == 40:
+                    player.bg = background_colors["40"]
                 player.golden_gifts += 50*active_things.count("0Paycheck")
 
                 if player.level == 1 or player.level % 2 == 0:

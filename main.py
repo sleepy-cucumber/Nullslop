@@ -4,8 +4,6 @@ from classes import *
 from variables import *
 import images
 
-bg_color = (50, 0, 120)
-
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Nullslop")
@@ -42,7 +40,7 @@ while running:
             player.platform = player.max_platform
         else:
             player.height -= 2
-    screen.fill(bg_color)
+    screen.fill(player.bg)
     text_jumps = ui_font.render("x" + str(jumpui.amount), False, (255,255,255))
     text_height = ui_font.render("h:"+str(player.height), False, (255,255,255))
     text_stamina = ui_font.render("stm:"+str(player.stamina)+"/"+str(player.max_stamina), False, (255,255,255))
