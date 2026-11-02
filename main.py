@@ -30,6 +30,9 @@ while running:
     else:
         running = False
 
+    if player.touched_enemy:
+        running = False
+    
     if not floor_collision:
         player.height -= 2
     else:
@@ -119,7 +122,7 @@ while running:
         thing_sprs.update()
         for spr in thing_sprs.sprites():
             if spr.count > 1 and spr.image != images.empty:
-                count_text = ui_font.render(f"{spr.count}", True, (255, 255, 255))
+                count_text = ui_font.render(str(spr.count), True, (255, 255, 255))
                 text_x = spr.rect.right - count_text.get_width() + 10
                 text_y = spr.rect.bottom - count_text.get_height() + 10
                 screen.blit(count_text, (text_x, text_y))
@@ -138,6 +141,12 @@ while running:
         player_sprite.update()
         beacon_spr.draw(screen)
         beacon_spr.update()
+        for enemy in enemy_sprs:
+            if -300 <= enemy.rect.x <= WIDTH + 300 and -300 <= enemy.rect.y <= HEIGHT + 300:
+                screen.blit(enemy.image, enemy.rect)
+                text_enemy_height = ui_font.render(str(enemy.height), False, (255,255,255))
+                screen.blit(text_enemy_height, (enemy.rect.x, enemy.rect.y + enemy.rect.height + 5))
+        enemy_sprs.update()
         ui_sprites.draw(screen)
         ui_sprites.update()
         screen.blit(text_jumps, (jumpui.x, jumpui.y + 32))

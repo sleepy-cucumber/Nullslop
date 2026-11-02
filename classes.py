@@ -1,7 +1,7 @@
 import pygame
 from variables import *
 import images
-from random import choice
+from random import choice, randint
 
 offsetx = WIDTH//2
 offsety = HEIGHT//2
@@ -21,6 +21,10 @@ tile_w_down = ["crossroad", "vert", "tnoup", "tnoleft", "tnoright", "ldl", "ldr"
 text_gifts = gih_count_font.render("/", False, (255,255,255))
 active_things = ["0Paycheck"]
 # 0 - upgrade, 1 - greater curse, 2 - curse, 3 - temporary enemy, 4 - enemy
+
+# enemies:
+# leafery: 4Leafery
+# pbsc: 4SmallChange
 
 def generate_map():
     global total_weight, generating, last_id, coll_id
@@ -88,14 +92,14 @@ def generate_map():
     make_gifts()
 
 def make_gifts():
-    global generating, text_gifts
+    global text_gifts
     for tile in map_sprs:
         for gift_pos in tile.gifts:
             gift_sprs.add(Gift(tile.mapx + gift_pos[0], tile.mapy + gift_pos[1], tile.id))
     player.gifts_collected = 0
     player.total_gifts = len(gift_sprs)
     text_gifts = gih_count_font.render(f"0/{player.total_gifts}", False, (255, 255, 255))
-    generating = False
+    spawn_enemies()
 
 def make_golden_gifts():
     global generating, text_gifts, collapse
@@ -106,6 +110,14 @@ def make_golden_gifts():
     player.total_gifts = len(gift_sprs)
     text_gifts = gih_count_font.render(f"0/{player.total_gifts}", False, (255, 255, 255))
 
+def spawn_enemies():
+    global active_things, generating, enemy_sprs
+    enemy_sprs.empty()
+    for leafery in range(active_things.count("4Leafery")):
+        enemy_sprs.add(LeaferyEnemy(choice([randint(player.mapx - 800, player.mapx - 200), randint(player.mapx + 200, player.mapx + 800)]),
+                                    choice([randint(player.mapy - 800, player.mapy - 200), randint(player.mapy + 200, player.mapy + 800)]),
+                                    choice([randint(player.height - 400, player.height - 200), randint(player.height + 200, player.height + 400)])))
+    generating = False
     
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -129,6 +141,7 @@ class Player(pygame.sprite.Sprite):
         self.golden_gifts = 0
         self.gift_multiplier = 2
         self.level = 1
+        self.touched_enemy = False
         self.image = images.player
         self.next = "intermissionenemy"
         self.rect = self.image.get_rect()
@@ -951,8 +964,11 @@ class Beacon(pygame.sprite.Sprite):
                     tile.kill()
                 for gift in gift_sprs:
                     gift.kill()
+                for enemy in enemy_sprs:
+                    enemy.kill()
                 map_sprs.empty()
                 gift_sprs.empty()
+                enemy_sprs.empty()
                 choice1.gambled = False
                 choice2.gambled = False
                 choice3.gambled = False
@@ -987,6 +1003,38 @@ class Beacon(pygame.sprite.Sprite):
                 coll_time = 300
                 self.kill()
 
+class LeaferyEnemy(pygame.sprite.Sprite):
+    def __init__(self, mapx, mapy, height):
+        global offsetx, offsety
+
+        super().__init__()
+        self.mapx = mapx
+        self.mapy = mapy
+        self.height = height
+        self.speed = 0.25
+        self.image = images.enemies["leafery"]
+        self.rect = self.image.get_rect()
+        self.mask = pygame.mask.from_surface(self.image)
+        self.rect.topleft = (self.mapx+offsetx, self.mapy+offsety)
+
+    def update(self):
+        if self.mapx < player.mapx:
+            self.mapx += self.speed
+        elif self.mapx > player.mapx:
+            self.mapx -= self.speed
+        if self.mapy < player.mapy:
+            self.mapy += self.speed
+        elif self.mapy > player.mapy:
+            self.mapy -= self.speed
+        if self.height < player.height:
+            self.height += self.speed
+        elif self.height > player.height:
+            self.height -= self.speed
+        self.rect.topleft = (round(self.mapx+offsetx), round(self.mapy+offsety))
+
+        if pygame.sprite.spritecollide(self, player_sprite, False, pygame.sprite.collide_mask) and self.height - 10 <= player.height <= self.height + 10:
+            player.touched_enemy = True
+
 
 player = Player()
 intermission = Intermission()
@@ -1010,3 +1058,4 @@ reroll_spr = pygame.sprite.Group(reroll)
 thinglist_spr = pygame.sprite.Group(thinglist)
 gift_sprs = pygame.sprite.Group()
 beacon_spr = pygame.sprite.Group()
+enemy_sprs = pygame.sprite.Group()
