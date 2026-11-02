@@ -307,63 +307,64 @@ class Tile(pygame.sprite.Sprite):
         self.mapx = x
         self.mapy = y
         self.weight = 0
+        self.time = 300
         self.gifts = []
         if self.type == "spawn":
             self.image = images.tiles["spawn"].copy()
             self.sides = [1,2,3,4]
             self.weight = 0
         elif self.type == "horiz":
-            self.image = images.tiles["horiz"].copy()
+            self.image = images.tiles["horiz"]["normal"].copy()
             self.sides = [2,4]
             self.weight = 7
             self.gifts = [(18, 125), (54, 125), (89, 125), (125, 125), (161, 125), (196, 125), (232, 125)]
         elif self.type == "vert":
-            self.image = images.tiles["vert"].copy()
+            self.image = images.tiles["vert"]["normal"].copy()
             self.sides = [1,3]
             self.weight = 7
             self.gifts = [(125, 18), (125, 54), (125, 89), (125, 125), (125, 161), (125, 196), (125, 232)]
         elif self.type == "crossroad":
-            self.image = images.tiles["crossroad"].copy()
+            self.image = images.tiles["crossroad"]["normal"].copy()
             self.sides = [1,2,3,4]
             self.weight = 13
             self.gifts = [(18, 125), (54, 125), (89, 125), (125, 125), (161, 125), (196, 125), (232, 125), (125, 18), (125, 54), (125, 89), (125, 161), (125, 196), (125, 232)]
         elif self.type == "tnoleft":
-            self.image = images.tiles["tnoleft"].copy()
+            self.image = images.tiles["tnoleft"]["normal"].copy()
             self.sides = [1,2,3]
             self.weight = 10
             self.gifts = [(125, 125), (161, 125), (196, 125), (232, 125), (125, 18), (125, 54), (125, 89), (125, 161), (125, 196), (125, 232)]
         elif self.type == "tnoright":
-            self.image = images.tiles["tnoright"].copy()
+            self.image = images.tiles["tnoright"]["normal"].copy()
             self.sides = [1,3,4]
             self.weight = 10
             self.gifts = [(18, 125), (54, 125), (89, 125), (125, 125), (125, 18), (125, 54), (125, 89), (125, 161), (125, 196), (125, 232)]
         elif self.type == "tnoup":
-            self.image = images.tiles["tnoup"].copy()
+            self.image = images.tiles["tnoup"]["normal"].copy()
             self.sides = [2,3,4]
             self.weight = 10
             self.gifts = [(18, 125), (54, 125), (89, 125), (125, 125), (161, 125), (196, 125), (232, 125), (125, 161), (125, 196), (125, 232)]
         elif self.type == "tnodown":
-            self.image = images.tiles["tnodown"].copy()
+            self.image = images.tiles["tnodown"]["normal"].copy()
             self.sides = [1,2,4]
             self.weight = 10
             self.gifts = [(18, 125), (54, 125), (89, 125), (125, 125), (161, 125), (196, 125), (232, 125), (125, 18), (125, 54), (125, 89)]
         elif self.type == "lur":
-            self.image = images.tiles["lur"].copy()
+            self.image = images.tiles["lur"]["normal"].copy()
             self.sides = [1,2]
             self.weight = 7
             self.gifts = [(125, 125), (161, 125), (196, 125), (232, 125), (125, 18), (125, 54), (125, 89)]
         elif self.type == "ldr":
-            self.image = images.tiles["ldr"].copy()
+            self.image = images.tiles["ldr"]["normal"].copy()
             self.sides = [2,3]
             self.weight = 7
             self.gifts = [(125, 125), (161, 125), (196, 125), (232, 125), (125, 161), (125, 196), (125, 232)]
         elif self.type == "ldl":
-            self.image = images.tiles["ldl"].copy()
+            self.image = images.tiles["ldl"]["normal"].copy()
             self.sides = [3,4]
             self.weight = 7
             self.gifts = [(18, 125), (54, 125), (89, 125), (125, 125), (125, 161), (125, 196), (125, 232)]
         elif self.type == "lul":
-            self.image = images.tiles["lul"].copy()
+            self.image = images.tiles["lul"]["normal"].copy()
             self.sides = [1,4]
             self.weight = 7
             self.gifts = [(18, 125), (54, 125), (89, 125), (125, 125), (125, 18), (125, 54), (125, 89)]
@@ -383,9 +384,14 @@ class Tile(pygame.sprite.Sprite):
         self.rect.topleft = ((self.mapx + offsetx - 125, self.mapy + offsety - 125))
         if collapse:
             tiles_per_step = max(1, max_tiles_this_level // 10)
-            
             if collapse_sequence and any(self.mapx == t.mapx and self.mapy == t.mapy for t in collapse_sequence[:tiles_per_step]):
-                self.image.set_alpha(128)
+                self.time -= 1
+                if self.time > 30:
+                    self.image = images.tiles[self.type]["cracked"].copy()
+                elif self.time <= 30:
+                    self.image = images.tiles[self.type]["break"].copy()
+                else:
+                    self.image.set_alpha(128)
             else:
                 self.image.set_alpha(255)
         else:

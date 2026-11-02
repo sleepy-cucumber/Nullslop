@@ -7,17 +7,61 @@ icon = pygame.image.load("sprites/icon.png")
 pygame.display.set_icon(icon)
 tiles = {
     "spawn": pygame.image.load("sprites/tiles/spawn.png").convert_alpha(),
-    "crossroad": pygame.image.load("sprites/tiles/crossroad.png").convert_alpha(),
-    "horiz": pygame.image.load("sprites/tiles/horiz.png").convert_alpha(),
-    "vert": pygame.image.load("sprites/tiles/vert.png").convert_alpha(),
-    "tnoleft": pygame.image.load("sprites/tiles/tnoleft.png").convert_alpha(),
-    "tnoright": pygame.image.load("sprites/tiles/tnoright.png").convert_alpha(),
-    "tnoup": pygame.image.load("sprites/tiles/tnoup.png").convert_alpha(),
-    "tnodown": pygame.image.load("sprites/tiles/tnodown.png").convert_alpha(),
-    "lur": pygame.image.load("sprites/tiles/lur.png").convert_alpha(),
-    "ldr": pygame.image.load("sprites/tiles/ldr.png").convert_alpha(),
-    "ldl": pygame.image.load("sprites/tiles/ldl.png").convert_alpha(),
-    "lul": pygame.image.load("sprites/tiles/lul.png").convert_alpha(),
+    "crossroad": {
+        "normal": pygame.image.load("sprites/tiles/crossroad/crossroad.png").convert_alpha(),
+        "cracked": pygame.image.load("sprites/tiles/crossroad/crossroadcracked.png").convert_alpha(),
+        "break": pygame.image.load("sprites/tiles/crossroad/crossroadbreak.png").convert_alpha()
+    },
+    "horiz": {
+        "normal": pygame.image.load("sprites/tiles/horiz/horiz.png").convert_alpha(),
+        "cracked": pygame.image.load("sprites/tiles/horiz/horizcracked.png").convert_alpha(),
+        "break": pygame.image.load("sprites/tiles/horiz/horizbreak.png").convert_alpha()
+    },
+    "vert": {
+        "normal": pygame.image.load("sprites/tiles/vert/vert.png").convert_alpha(),
+        "cracked": pygame.image.load("sprites/tiles/vert/vertcracked.png").convert_alpha(),
+        "break": pygame.image.load("sprites/tiles/vert/vertbreak.png").convert_alpha()
+    },
+    "tnoleft": {
+        "normal": pygame.image.load("sprites/tiles/tnoleft/tnoleft.png").convert_alpha(),
+        "cracked": pygame.image.load("sprites/tiles/tnoleft/tnoleftcracked.png").convert_alpha(),
+        "break": pygame.image.load("sprites/tiles/tnoleft/tnoleftbreak.png").convert_alpha()
+    },
+    "tnoright": {
+        "normal": pygame.image.load("sprites/tiles/tnoright/tnoright.png").convert_alpha(),
+        "cracked": pygame.image.load("sprites/tiles/tnoright/tnorightcracked.png").convert_alpha(),
+        "break": pygame.image.load("sprites/tiles/tnoright/tnorightbreak.png").convert_alpha()
+    },
+    "tnoup": {
+        "normal": pygame.image.load("sprites/tiles/tnoup/tnoup.png").convert_alpha(),
+        "cracked": pygame.image.load("sprites/tiles/tnoup/tnoupcracked.png").convert_alpha(),
+        "break": pygame.image.load("sprites/tiles/tnoup/tnoupbreak.png").convert_alpha()
+    },
+    "tnodown": {
+        "normal": pygame.image.load("sprites/tiles/tnodown/tnodown.png").convert_alpha(),
+        "cracked": pygame.image.load("sprites/tiles/tnodown/tnodowncracked.png").convert_alpha(),
+        "break": pygame.image.load("sprites/tiles/tnodown/tnodownbreak.png").convert_alpha()
+    },
+    "lur": {
+        "normal": pygame.image.load("sprites/tiles/lur/lur.png").convert_alpha(),
+        "cracked": pygame.image.load("sprites/tiles/lur/lurcracked.png").convert_alpha(),
+        "break": pygame.image.load("sprites/tiles/lur/lurbreak.png").convert_alpha()
+    },
+    "ldr": {
+        "normal": pygame.image.load("sprites/tiles/ldr/ldr.png").convert_alpha(),
+        "cracked": pygame.image.load("sprites/tiles/ldr/ldrcracked.png").convert_alpha(),
+        "break": pygame.image.load("sprites/tiles/ldr/ldrbreak.png").convert_alpha()
+    },
+    "ldl": {
+        "normal": pygame.image.load("sprites/tiles/ldl/ldl.png").convert_alpha(),
+        "cracked": pygame.image.load("sprites/tiles/ldl/ldlcracked.png").convert_alpha(),
+        "break": pygame.image.load("sprites/tiles/ldl/ldlbreak.png").convert_alpha()
+    },
+    "lul": {
+        "normal": pygame.image.load("sprites/tiles/lul/lul.png").convert_alpha(),
+        "cracked": pygame.image.load("sprites/tiles/lul/lulcracked.png").convert_alpha(),
+        "break": pygame.image.load("sprites/tiles/lul/lulbreak.png").convert_alpha()
+    }
 }
 ui = {
     "jumps": pygame.image.load("sprites/ui/jumps.png").convert_alpha()
