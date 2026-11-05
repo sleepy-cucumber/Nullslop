@@ -74,6 +74,12 @@ choiceenemies = {
     "leafery": pygame.image.load("sprites/choice/enemies/LeaferyChoice.png"),
     "smallchangebelly": pygame.image.load("sprites/choice/enemies/SmallChangePotBelliedChoice.png")
 }
+choicecurses = {
+    "scatteredgifts": pygame.image.load("sprites/choice/curses/ScatteredGiftsCurse.png"),
+    "ohno": pygame.image.load("sprites/choice/curses/OhNoCurse.png"),
+    "moretripmines": pygame.image.load("sprites/choice/curses/MoreTripminesCurse.png"),
+    "chargeback": pygame.image.load("sprites/choice/curses/+ChargebackCurse.png")
+}
 choiceupgrades = {
     "paycheck": pygame.image.load("sprites/choice/upgrades/Paycheck.png")
 }

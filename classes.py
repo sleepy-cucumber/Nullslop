@@ -7,6 +7,7 @@ import math
 offsetx = WIDTH//2
 offsety = HEIGHT//2
 available_enemies = ["leafery", "smallchange"]
+available_curses = ["scatteredgifts"]
 last_id = 0
 coll_id = 0
 coll_time = 300
@@ -415,6 +416,9 @@ class Gift(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.mapx = x
         self.mapy = y
+        if "2ScatteredGifts" in active_things:
+            self.mapx += randint(-10, 10)
+            self.mapy += randint(-10, 10)
 
     def update(self):
         global text_gifts, collapse, text_golden_gifts
@@ -471,9 +475,14 @@ class Intermission(pygame.sprite.Sprite):
                 choice2.type = "enemy"
                 choice3.type = "enemy"
             elif self.type == "curse":
-                choice1.type = "none"
-                choice2.type = "continue"
-                choice3.type = "none"
+                if available_curses:
+                    choice1.type = "curse"
+                    choice2.type = "curse"
+                    choice3.type = "curse"
+                else:
+                    choice1.type = "none"
+                    choice2.type = "continue"
+                    choice3.type = "none"
             elif self.type == "upgrade":
                 choice1.type = "none"
                 choice2.type = "continue"
@@ -499,7 +508,7 @@ class Choice1(pygame.sprite.Sprite):
                 case "intermissionenemy":
                     self.type = "enemy"
                 case "intermissioncurse":
-                    self.type = "none"
+                    self.type = "curse"
                 case "intermissionupgrade":
                     self.type = "none"
                 case "level":
@@ -554,9 +563,14 @@ class Choice1(pygame.sprite.Sprite):
                         generate_map()
                     elif player.next == "intermissioncurse":
                         intermission.type = "curse"
-                        self.type = "none"
-                        choice2.type = "continue"
-                        choice3.type = "none"
+                        if available_curses:
+                            self.type = "curse"
+                            choice2.type = "curse"
+                            choice3.type = "curse"
+                        else:
+                            self.type = "none"
+                            choice2.type = "continue"
+                            choice3.type = "none"
                     elif player.next == "intermissionupgrade":
                         intermission.type = "upgrade"
                         self.type = "none"
@@ -566,7 +580,68 @@ class Choice1(pygame.sprite.Sprite):
             else:
                 self.open = False
         elif self.type == "curse":
-            pass
+            if self.gambled == False:
+                if available_curses:
+                    self.thing = choice(available_curses)
+                    self.gambled = True
+                    if self.thing == "scatteredgifts":
+                        self.image = images.choicecurses["scatteredgifts"]
+                    elif self.thing == "ohno":
+                        self.image = images.choicecurses["ohno"]
+                    elif self.thing == "moretripmines":
+                        self.image = images.choicecurses["moretripmines"]
+                    elif self.thing == "chargeback":
+                        self.image = images.choicecurses["chargeback"]
+                else:
+                    self.type = "none"
+            if -50 <= player.mapx - self.mapx <= 20 and -50 <= player.mapy - self.mapy <= 20:
+                self.open = True
+                if self.thing == "scatteredgifts":
+                    description.change_text("Scattered Gifts", "Gifts have a slight offset when generating.")
+                elif self.thing == "ohno":
+                    description.change_text("Oh No", "You feel a sense of dread...")
+                elif self.thing == "moretripmines":
+                    description.change_text("More Tripmines", "Increases the chance of Tripmines replacing Gifts.")
+                elif self.thing == "chargeback":
+                    description.change_text("+Chargeback", "Instead of killing you, Tripmines now take Golden Gifts on touch.")
+                if keys[pygame.K_f] and self.choicecd <= 0:
+                    match self.thing:
+                        case "scatteredgifts":
+                            active_things.append("2ScatteredGifts")
+                            available_curses.remove("scatteredgifts")
+                        case "ohno":
+                            active_things.append("21OhNo")
+                            available_curses.remove("ohno")
+                        case "moretripmines":
+                            active_things.append("22MoreTripmines")
+                            available_curses.remove("moretripmines")
+                        case "chargeback":
+                            active_things.append("22Chargeback")
+                            available_curses.remove("chargeback")
+                    self.type = "none"
+                    self.thing = None
+                    self.image = images.empty
+                    self.choicecd = 30
+                    if thinglist.on == True:
+                        thinglist.addeverything()
+                    if player.level%10 in (3, 5, 8, 0):
+                        player.next = "intermissionupgrade"
+                    else:
+                        player.next = "level"
+                    if player.next == "level":
+                        player.status = 2
+                        generating = True
+                        player.mapx = -15
+                        player.mapy = -15
+                        offsetx = WIDTH//2 + 15
+                        offsety = HEIGHT//2 + 15
+                        max_weight = player.level*30
+                        generate_map()
+                    elif player.next == "intermissionupgrade":
+                        intermission.type = "upgrade"
+                        self.type = "none"
+                        choice2.type = "continue"
+                        choice3.type = "none"
         elif self.type == "upgrade":
             pass
         else:
@@ -594,7 +669,7 @@ class Choice2(pygame.sprite.Sprite):
                 case "intermissionenemy":
                     self.type = "enemy"
                 case "intermissioncurse":
-                    self.type = "continue"
+                    self.type = "curse"
                 case "intermissionupgrade":
                     self.type = "continue"
                 case "level":
@@ -712,9 +787,14 @@ class Choice2(pygame.sprite.Sprite):
                         generate_map()
                     elif player.next == "intermissioncurse":
                         intermission.type = "curse"
-                        choice1.type = "none"
-                        self.type = "continue"
-                        choice3.type = "none"
+                        if available_curses:
+                            choice1.type = "curse"
+                            self.type = "curse"
+                            choice3.type = "curse"
+                        else:
+                            choice1.type = "none"
+                            self.type = "continue"
+                            choice3.type = "none"
                     elif player.next == "intermissionupgrade":
                         intermission.type = "upgrade"
                         choice1.type = "none"
@@ -723,7 +803,68 @@ class Choice2(pygame.sprite.Sprite):
             else:
                 self.open = False
         elif self.type == "curse":
-            pass
+            if self.gambled == False:
+                if available_curses:
+                    self.thing = choice(available_curses)
+                    self.gambled = True
+                    if self.thing == "scatteredgifts":
+                        self.image = images.choicecurses["scatteredgifts"]
+                    elif self.thing == "ohno":
+                        self.image = images.choicecurses["ohno"]
+                    elif self.thing == "moretripmines":
+                        self.image = images.choicecurses["moretripmines"]
+                    elif self.thing == "chargeback":
+                        self.image = images.choicecurses["chargeback"]
+                else:
+                    self.type = "continue"
+            if -50 <= player.mapx - self.mapx <= 20 and -50 <= player.mapy - self.mapy <= 20:
+                self.open = True
+                if self.thing == "scatteredgifts":
+                    description.change_text("Scattered Gifts", "Gifts have a slight offset when generating.")
+                elif self.thing == "ohno":
+                    description.change_text("Oh No", "You feel a sense of dread...")
+                elif self.thing == "moretripmines":
+                    description.change_text("More Tripmines", "Increases the chance of Tripmines replacing Gifts.")
+                elif self.thing == "chargeback":
+                    description.change_text("+Chargeback", "Instead of killing you, Tripmines now take Golden Gifts on touch.")
+                if keys[pygame.K_f] and self.choicecd <= 0:
+                    match self.thing:
+                        case "scatteredgifts":
+                            active_things.append("2ScatteredGifts")
+                            available_curses.remove("scatteredgifts")
+                        case "ohno":
+                            active_things.append("21OhNo")
+                            available_curses.remove("ohno")
+                        case "moretripmines":
+                            active_things.append("22MoreTripmines")
+                            available_curses.remove("moretripmines")
+                        case "chargeback":
+                            active_things.append("22Chargeback")
+                            available_curses.remove("chargeback")
+                    self.type = "none"
+                    self.thing = None
+                    self.image = images.empty
+                    self.choicecd = 30
+                    if thinglist.on == True:
+                        thinglist.addeverything()
+                    if player.level%10 in (3, 5, 8, 0):
+                        player.next = "intermissionupgrade"
+                    else:
+                        player.next = "level"
+                    if player.next == "level":
+                        player.status = 2
+                        generating = True
+                        player.mapx = -15
+                        player.mapy = -15
+                        offsetx = WIDTH//2 + 15
+                        offsety = HEIGHT//2 + 15
+                        max_weight = player.level*30
+                        generate_map()
+                    elif player.next == "intermissionupgrade":
+                        intermission.type = "upgrade"
+                        choice1.type = "none"
+                        self.type = "continue"
+                        choice3.type = "none"
         elif self.type == "upgrade":
             pass
         else:
@@ -751,7 +892,7 @@ class Choice3(pygame.sprite.Sprite):
                 case "intermissionenemy":
                     self.type = "enemy"
                 case "intermissioncurse":
-                    self.type = "none"
+                    self.type = "curse"
                 case "intermissionupgrade":
                     self.type = "none"
                 case "level":
@@ -806,9 +947,14 @@ class Choice3(pygame.sprite.Sprite):
                         generate_map()
                     elif player.next == "intermissioncurse":
                         intermission.type = "curse"
-                        choice1.type = "none"
-                        choice2.type = "continue"
-                        self.type = "none"
+                        if available_curses:
+                            choice1.type = "curse"
+                            choice2.type = "curse"
+                            self.type = "curse"
+                        else:
+                            choice1.type = "none"
+                            choice2.type = "continue"
+                            self.type = "none"
                     elif player.next == "intermissionupgrade":
                         intermission.type = "upgrade"
                         choice1.type = "none"
@@ -817,7 +963,68 @@ class Choice3(pygame.sprite.Sprite):
             else:
                 self.open = False
         elif self.type == "curse":
-            pass
+            if self.gambled == False:
+                if available_curses:
+                    self.thing = choice(available_curses)
+                    self.gambled = True
+                    if self.thing == "scatteredgifts":
+                        self.image = images.choicecurses["scatteredgifts"]
+                    elif self.thing == "ohno":
+                        self.image = images.choicecurses["ohno"]
+                    elif self.thing == "moretripmines":
+                        self.image = images.choicecurses["moretripmines"]
+                    elif self.thing == "chargeback":
+                        self.image = images.choicecurses["chargeback"]
+                else:
+                    self.type = "none"
+            if -50 <= player.mapx - self.mapx <= 20 and -50 <= player.mapy - self.mapy <= 20:
+                self.open = True
+                if self.thing == "scatteredgifts":
+                    description.change_text("Scattered Gifts", "Gifts have a slight offset when generating.")
+                elif self.thing == "ohno":
+                    description.change_text("Oh No", "You feel a sense of dread...")
+                elif self.thing == "moretripmines":
+                    description.change_text("More Tripmines", "Increases the chance of Tripmines replacing Gifts.")
+                elif self.thing == "chargeback":
+                    description.change_text("+Chargeback", "Instead of killing you, Tripmines now take Golden Gifts on touch.")
+                if keys[pygame.K_f] and self.choicecd <= 0:
+                    match self.thing:
+                        case "scatteredgifts":
+                            active_things.append("2ScatteredGifts")
+                            available_curses.remove("scatteredgifts")
+                        case "ohno":
+                            active_things.append("21OhNo")
+                            available_curses.remove("ohno")
+                        case "moretripmines":
+                            active_things.append("22MoreTripmines")
+                            available_curses.remove("moretripmines")
+                        case "chargeback":
+                            active_things.append("22Chargeback")
+                            available_curses.remove("chargeback")
+                    self.type = "none"
+                    self.thing = None
+                    self.image = images.empty
+                    self.choicecd = 30
+                    if thinglist.on == True:
+                        thinglist.addeverything()
+                    if player.level%10 in (3, 5, 8, 0):
+                        player.next = "intermissionupgrade"
+                    else:
+                        player.next = "level"
+                    if player.next == "level":
+                        player.status = 2
+                        generating = True
+                        player.mapx = -15
+                        player.mapy = -15
+                        offsetx = WIDTH//2 + 15
+                        offsety = HEIGHT//2 + 15
+                        max_weight = player.level*30
+                        generate_map()
+                    elif player.next == "intermissionupgrade":
+                        intermission.type = "upgrade"
+                        choice1.type = "none"
+                        choice2.type = "continue"
+                        self.type = "none"
         elif self.type == "upgrade":
             pass
         else:
@@ -937,6 +1144,14 @@ class Thing(pygame.sprite.Sprite):
                 self.image = images.choiceenemies["leafery"]
             case "4SmallChange":
                 self.image = images.choiceenemies["smallchangebelly"]
+            case "2ScatteredGifts":
+                self.image = images.choicecurses["scatteredgifts"]
+            case "21OhNo":
+                self.image = images.choicecurses["ohno"]
+            case "22MoreTripmines":
+                self.image = images.choicecurses["moretripmines"]
+            case "22Chargeback":
+                self.image = images.choicecurses["chargeback"]
             case _:
                 self.image = images.empty
         self.rect = self.image.get_rect()
@@ -971,7 +1186,6 @@ class Beacon(pygame.sprite.Sprite):
                 choice1.gambled = False
                 choice2.gambled = False
                 choice3.gambled = False
-                last_digit = player.level % 10
                 collapse = False
                 player.level += 1
                 if player.level == 5:
@@ -986,6 +1200,8 @@ class Beacon(pygame.sprite.Sprite):
                     player.bg = background_colors["40"]
                 player.golden_gifts += 50*active_things.count("0Paycheck")
 
+                last_digit = player.level % 10
+
                 if player.level == 1 or player.level % 2 == 0:
                     player.next = "intermissionenemy"
                     intermission.type = "enemy"
@@ -995,9 +1211,9 @@ class Beacon(pygame.sprite.Sprite):
                 elif player.level % 3 == 0:
                     player.next = "intermissioncurse"
                     intermission.type = "curse"
-                    choice1.type = "none"       
-                    choice2.type = "continue"   
-                    choice3.type = "none"
+                    choice1.type = "curse"       
+                    choice2.type = "curse"   
+                    choice3.type = "curse"
                 elif last_digit in (3, 5, 8, 0):
                     player.next = "intermissionupgrade"
                     intermission.type = "upgrade"
@@ -1070,7 +1286,7 @@ class SmallChangeEnemy(pygame.sprite.Sprite):
             self.mapy += self.dash_vy
             self.dash_timer -= 1
             if self.dash_timer == 0:
-                self.dash_cd = 60
+                self.dash_cd = 60 + randint(-5, 5)
         elif self.aim_timer > 0:
             self.aim_timer -= 1
             if self.aim_timer == 0:
