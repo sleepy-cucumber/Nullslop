@@ -2,6 +2,7 @@ import pygame
 from variables import *
 import images
 from random import choice, randint
+import math
 
 offsetx = WIDTH//2
 offsety = HEIGHT//2
@@ -117,6 +118,9 @@ def spawn_enemies():
         enemy_sprs.add(LeaferyEnemy(choice([randint(player.mapx - 800, player.mapx - 200), randint(player.mapx + 200, player.mapx + 800)]),
                                     choice([randint(player.mapy - 800, player.mapy - 200), randint(player.mapy + 200, player.mapy + 800)]),
                                     choice([randint(player.height - 400, player.height - 200), randint(player.height + 200, player.height + 400)])))
+    for smallchange in range(active_things.count("4SmallChange")):
+        enemy_sprs.add(SmallChangeEnemy(choice([randint(player.mapx - 800, player.mapx - 200), randint(player.mapx + 200, player.mapx + 800)]),
+                                        choice([randint(player.mapy - 800, player.mapy - 200), randint(player.mapy + 200, player.mapy + 800)])))
     generating = False
     
 class Player(pygame.sprite.Sprite):
@@ -525,18 +529,14 @@ class Choice1(pygame.sprite.Sprite):
                     match self.thing:
                         case "leafery":
                             active_things.append("4Leafery")
-                            thinglist.addeverything()
-                            self.thing = None
-                            self.image = images.empty
-                            self.type = "none"
-                            self.choicecd = 30
                         case "smallchange":
                             active_things.append("4SmallChange")
-                            thinglist.addeverything()
-                            self.thing = None
-                            self.image = images.empty
-                            self.type = "none"
-                            self.choicecd = 30
+                    self.type = "none"
+                    self.thing = None
+                    self.image = images.empty
+                    self.choicecd = 30
+                    if thinglist.on == True:
+                        thinglist.addeverything()
                     if player.level % 3 == 0:
                         player.next = "intermissioncurse"
                     elif player.level%10 in (3, 5, 8, 0):
@@ -687,18 +687,14 @@ class Choice2(pygame.sprite.Sprite):
                     match self.thing:
                         case "leafery":
                             active_things.append("4Leafery")
-                            thinglist.addeverything()
-                            self.thing = None
-                            self.image = images.empty
-                            self.type = "none"
-                            self.choicecd = 30
                         case "smallchange":
                             active_things.append("4SmallChange")
-                            thinglist.addeverything()
-                            self.thing = None
-                            self.image = images.empty
-                            self.type = "none"
-                            self.choicecd = 30
+                    self.type = "none"
+                    self.thing = None
+                    self.image = images.empty
+                    self.choicecd = 30
+                    if thinglist.on == True:
+                        thinglist.addeverything()
                     if player.level % 3 == 0:
                         player.next = "intermissioncurse"
                     elif player.level%10 in (3, 5, 8, 0):
@@ -785,18 +781,14 @@ class Choice3(pygame.sprite.Sprite):
                     match self.thing:
                         case "leafery":
                             active_things.append("4Leafery")
-                            thinglist.addeverything()
-                            self.thing = None
-                            self.image = images.empty
-                            self.type = "none"
-                            self.choicecd = 30
                         case "smallchange":
                             active_things.append("4SmallChange")
-                            thinglist.addeverything()
-                            self.thing = None
-                            self.image = images.empty
-                            self.type = "none"
-                            self.choicecd = 30
+                    self.type = "none"
+                    self.thing = None
+                    self.image = images.empty
+                    self.choicecd = 30
+                    if thinglist.on == True:
+                        thinglist.addeverything()
                     if player.level % 3 == 0:
                         player.next = "intermissioncurse"
                     elif player.level%10 in (3, 5, 8, 0):
@@ -1052,6 +1044,64 @@ class LeaferyEnemy(pygame.sprite.Sprite):
         if pygame.sprite.spritecollide(self, player_sprite, False, pygame.sprite.collide_mask) and self.height - 10 <= player.height <= self.height + 10:
             player.touched_enemy = True
 
+class SmallChangeEnemy(pygame.sprite.Sprite):
+    def __init__(self, mapx, mapy):
+        global offsetx, offsety
+
+        super().__init__()
+        self.mapx = mapx
+        self.mapy = mapy
+        self.height = "inf"
+        self.dash_cd = 120
+        self.dash_timer = 0
+        self.aim_timer = 0
+        self.dash_vx = 0
+        self.dash_vy = 0
+        self.dash_dist = 350
+        self.image = images.enemies["smallchangebelly"]
+        self.rect = self.image.get_rect()
+        self.mask = pygame.mask.from_surface(self.image)
+        self.rect.topleft = (self.mapx+offsetx, self.mapy+offsety)
+
+    def update(self):
+        global offsetx, offsety
+        if self.dash_timer > 0:
+            self.mapx += self.dash_vx
+            self.mapy += self.dash_vy
+            self.dash_timer -= 1
+            if self.dash_timer == 0:
+                self.dash_cd = 60
+        elif self.aim_timer > 0:
+            self.aim_timer -= 1
+            if self.aim_timer == 0:
+                self.dash_timer = 30
+        else:
+            if self.dash_cd > 0:
+                self.dash_cd -= 1
+            else:
+                dx = player.mapx - self.mapx
+                dy = player.mapy - self.mapy
+                distance = math.hypot(dx, dy)
+                if distance != 0:
+                    dir_x = dx / distance
+                    dir_y = dy / distance
+                else:
+                    dir_x, dir_y = 1, 0
+                dash_speed = self.dash_dist / 30
+                self.dash_vx = dir_x * dash_speed
+                self.dash_vy = dir_y * dash_speed
+                self.target_mapx = self.mapx + dir_x * self.dash_dist
+                self.target_mapy = self.mapy + dir_y * self.dash_dist
+                self.aim_timer = 30
+        self.rect.topleft = (round(self.mapx+offsetx), round(self.mapy+offsety))
+        if pygame.sprite.spritecollide(self, player_sprite, False, pygame.sprite.collide_mask):
+            player.touched_enemy = True
+
+    def draw_line(self, surface):
+        if self.aim_timer > 0:
+            start_pos = (round(self.mapx + offsetx + 16), round(self.mapy + offsety + 16))
+            end_pos = (round(self.target_mapx + offsetx + 16), round(self.target_mapy + offsety + 16))
+            pygame.draw.line(surface, (255, 0, 0), start_pos, end_pos, 2)
 
 player = Player()
 intermission = Intermission()

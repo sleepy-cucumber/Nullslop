@@ -4,7 +4,7 @@ Game inspired by the Roblox game Nullscape.
 ---
 
 ### This game is still not complete!
-**Enemies, curses and upgrades don't work yet.**
+**Curses and upgrades don't work yet.**
 
 ---
 

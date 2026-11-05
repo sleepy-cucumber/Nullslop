@@ -140,6 +140,9 @@ while running:
         beacon_spr.draw(screen)
         beacon_spr.update()
         for enemy in enemy_sprs:
+            if isinstance(enemy, SmallChangeEnemy):
+                enemy.draw_line(screen)
+        for enemy in enemy_sprs:
             if -300 <= enemy.rect.x <= WIDTH + 300 and -300 <= enemy.rect.y <= HEIGHT + 300:
                 screen.blit(enemy.image, enemy.rect)
                 text_enemy_height = ui_font.render(str(enemy.height), False, (255,255,255))
